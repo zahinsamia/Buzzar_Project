@@ -1,0 +1,32 @@
+{
+  "name": "buzzar_project",
+  "version": "1.0.0",
+  "description": "FYP E-commerce platform for local and international brands using Microservices Architecture",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zahinsamia/Buzzar_Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/zahinsamia/Buzzar_Project/issues"
+  },
+  "homepage": "https://github.com/zahinsamia/Buzzar_Project#readme",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.19.3",
+    "react-router-dom": "^7.10.1",
+    "stripe": "^20.0.0"
+  }
+}

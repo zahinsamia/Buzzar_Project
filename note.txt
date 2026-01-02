@@ -1,0 +1,66 @@
+Here are the login credentials for the "demo" accounts 
+
+Customer
+Email: customer@demo.com
+
+Password: password123
+
+Postman Login Body:
+
+JSON
+
+{
+  "email": "customer@demo.com",
+  "password": "password123"
+}
+
+
+
+Vendor
+Email: vendor@demo.com
+
+Password: password123
+
+Postman Login Body:
+
+JSON
+
+{
+  "email": "vendor@demo.com",
+  "password": "password123"
+}
+
+
+
+
+JSON for Checkout Body
+JSON
+
+{
+  "items": [
+    {
+      "productId": "6554b9d0b00c3b1e5a0f8b8a",
+      "name": "Stylish Blue Jeans",
+      "price": 45.00,
+      "quantity": 1
+    }
+  ],
+  "totalPrice": 45.00,
+  "shippingAddress": {
+    "address": "123 Demo Street",
+    "city": "Kuala Lumpur",
+    "postalCode": "50000",
+    "country": "Malaysia"
+  }
+}
+
+
+{
+  "username": "SuperAdmin",
+  "email": "admin@buzzar.com",
+  "password": "adminpass123",
+  "role": "Admin"
+}
+
+
+
