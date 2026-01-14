@@ -5,7 +5,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const express = require('express');
 const mongoose = require('mongoose');
 const Order = require('./models/order.model');       // Import our Order model
-const {auth, isVendor} = require('./middleware/auth'); // Import our "bouncer"
+const {auth, isVendor, isAdmin} = require('./middleware/auth'); // Import our "bouncer"
 
 
 // 2. Initialize Express App
@@ -84,20 +84,7 @@ app.get('/api/orders/my', auth, async (req, res) => {
 });
 
 
-// /**
-//  * @route   GET /api/orders
-//  * @desc    (VENDOR) Get all orders
-//  * @access  Private (Vendor only)
-//  */
-// app.get('/api/orders', [auth, isVendor], async (req, res) => {
-//   try {
-//     const orders = await Order.find().sort({ createdAt: -1 }); // Newest first
-//     res.json(orders);
-//   } catch (err) {
-//     console.error(err.message);
-//     res.status(500).send('Server Error');
-//   }
-// });
+
 
 /**
  * @route   GET /api/vendor/orders
@@ -259,7 +246,160 @@ app.get('/api/orders/:id', auth, async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/orders/analytics/admin
+ * @desc    (ADMIN) Get system-wide order analytics
+ * @access  Private (Admin only)
+ */
+app.get('/api/orders/analytics/admin', [auth, isAdmin], async (req, res) => {
+  try {
+    // Total orders & revenue (PAID only)
+    const summary = await Order.aggregate([
+      { $match: { paymentStatus: 'Paid' } },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          totalRevenue: { $sum: '$totalPrice' }
+        }
+      }
+    ]);
 
+    const totalOrders = summary[0]?.totalOrders || 0;
+    const totalRevenue = summary[0]?.totalRevenue || 0;
+
+    // Top vendors by revenue
+    const topVendors = await Order.aggregate([
+      { $match: { paymentStatus: 'Paid' } },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.vendorId',
+          revenue: {
+            $sum: { $multiply: ['$items.price', '$items.quantity'] }
+          }
+        }
+      },
+      { $sort: { revenue: -1 } },
+      { $limit: 5 }
+    ]);
+
+    res.json({
+      totalOrders,
+      totalRevenue,
+      topVendors
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: 'Failed to fetch order analytics' });
+  }
+});
+
+// /**
+//  * @route   GET /api/orders/analytics/vendor
+//  * @desc    (VENDOR) Get vendor-specific analytics
+//  * @access  Private (Vendor only)
+//  */
+// app.get('/api/orders/analytics/vendor', [auth, isVendor], async (req, res) => {
+//   try {
+//     const vendorId = req.user.id;
+
+//     // 1️⃣ Aggregate vendor orders (PAID only)
+//     const summary = await Order.aggregate([
+//       {
+//         $match: {
+//           paymentStatus: 'Paid',
+//           'items.vendorId': vendorId
+//         }
+//       },
+//       {
+//         $group: {
+//           _id: null,
+//           totalOrders: { $sum: 1 },
+//           totalRevenue: { $sum: '$totalPrice' }
+//         }
+//       }
+//     ]);
+
+//     const totalOrders = summary[0]?.totalOrders || 0;
+//     const totalRevenue = summary[0]?.totalRevenue || 0;
+
+//     res.json({
+//       totalOrders,
+//       totalRevenue
+//     });
+
+//   } catch (err) {
+//     console.error('Vendor analytics error:', err.message);
+//     res.status(500).json({ message: 'Failed to fetch vendor analytics' });
+//   }
+// });
+
+/**
+ * @route   GET /api/orders/analytics/vendor
+ * @desc    (VENDOR) Get vendor-specific analytics
+ * @access  Private (Vendor only)
+ */
+app.get('/api/orders/analytics/vendor', [auth, isVendor], async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+
+    // 1️⃣ Summary: orders & revenue
+    const summary = await Order.aggregate([
+      {
+        $match: {
+          paymentStatus: 'Paid',
+          'items.vendorId': vendorId
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          totalRevenue: { $sum: '$totalPrice' }
+        }
+      }
+    ]);
+
+    const totalOrders = summary[0]?.totalOrders || 0;
+    const totalRevenue = summary[0]?.totalRevenue || 0;
+
+    // 2️⃣ Top products for this vendor
+    const topProducts = await Order.aggregate([
+      { $match: { paymentStatus: 'Paid' } },
+      { $unwind: '$items' },
+      {
+        $match: {
+          'items.vendorId': vendorId
+        }
+      },
+      {
+        $group: {
+          _id: '$items.productId',
+          totalQuantity: { $sum: '$items.quantity' },
+          revenue: {
+            $sum: {
+              $multiply: ['$items.price', '$items.quantity']
+            }
+          }
+        }
+      },
+      { $sort: { revenue: -1 } },
+      { $limit: 5 }
+    ]);
+
+    res.json({
+      totalOrders,
+      totalRevenue,
+      topProducts
+    });
+
+  } catch (err) {
+    console.error('Vendor analytics error:', err.message);
+    res.status(500).json({ message: 'Failed to fetch vendor analytics' });
+  }
+});
 
 
 // 6. Start the Server

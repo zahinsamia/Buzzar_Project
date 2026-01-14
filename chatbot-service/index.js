@@ -27,7 +27,6 @@ app.post('/api/chat', auth, async (req, res) => {
   try {
     // STEP 1: Fetch Real Inventory Data
     // The chatbot asks the Inventory Service: "What are we selling today?"
-    // (We assume Inventory Service is running on port 3002)
     let productList = [];
     try {
       const inventoryResponse = await axios.get('http://localhost:3002/api/products');
@@ -39,7 +38,6 @@ app.post('/api/chat', auth, async (req, res) => {
     }
 
     // STEP 2: Build the "Context" for the AI
-    // We limit the data to just name, price, and description to save tokens
     const simplifiedProducts = productList.map(p => 
       `- ${p.name} ($${p.price}): ${p.description}`
     ).join('\n');

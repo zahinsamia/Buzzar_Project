@@ -34,8 +34,18 @@ const isVendor = (req, res, next) => {
   next();
 };
 
+// Bouncer #3: Checks if the user's role is 'Admin'
+const isAdmin = (req, res, next) => {
+  if (req.user.role !== 'Admin') {
+    return res.status(403).json({ message: 'Access denied: Admin role required' });
+  }
+  next();
+};
+
+
 // Export *both* bouncers so our index.js can use them
 module.exports = {
   auth,
-  isVendor
+  isVendor,
+  isAdmin
 };

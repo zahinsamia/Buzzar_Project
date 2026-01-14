@@ -36,13 +36,13 @@ app.get('/', (req, res) => {
 
 /**
  * @route   POST /api/auth/register
- * @desc    Register a new user
+ * @desc    Register a new user (Customer only)
  * @access  Public
  */
 app.post('/api/auth/register', async (req, res) => {
   try {
     // 1. Destructure username, email, and password from request body
-    const { username, email, password, role } = req.body;
+    const { username, email, password} = req.body;
 
     // 2. Check for existing user
     let user = await User.findOne({ email });
@@ -59,7 +59,7 @@ app.post('/api/auth/register', async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      role
+      role: "Customer" // 🔒 FORCE customer role
     });
 
     // 5. Save the new user to the database
@@ -163,6 +163,52 @@ app.get('/api/users', [auth, isAdmin], async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+/**
+ * @route   PUT /api/users/:id/role
+ * @desc    (ADMIN) Update user role (Customer ↔ Vendor)
+ * @access  Private (Admin only)
+ */
+app.put('/api/users/:id/role', [auth, isAdmin], async (req, res) => {
+  try {
+    const { role } = req.body;
+
+    // 1. Only allow Customer or Vendor
+    if (!['Customer', 'Vendor'].includes(role)) {
+      return res.status(400).json({
+        message: 'Invalid role. Only Customer or Vendor allowed.'
+      });
+    }
+
+    // 2. Find user
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // 3. Block admin role assignment explicitly
+    if (role === 'Admin') {
+      return res.status(403).json({
+        message: 'Admin role cannot be assigned via API'
+      });
+    }
+
+    // 4. Update role
+    user.role = role;
+    await user.save();
+
+    res.json({
+      message: 'User role updated successfully',
+      userId: user._id,
+      newRole: user.role
+    });
+
+  } catch (err) {
+    console.error('Role update error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 /**
  * @route   DELETE /api/users/:id

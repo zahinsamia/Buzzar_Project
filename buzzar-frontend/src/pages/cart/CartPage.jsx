@@ -1,6 +1,22 @@
+// src/pages/cart/CartPage.jsx
 import { useCart } from "../../context/CartContext";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import Checkbox from "@mui/material/Checkbox";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
 
 const CartPage = () => {
   const { cart, loading, addToCart } = useCart();
@@ -9,15 +25,26 @@ const CartPage = () => {
   // Track selected items for checkout (manual selection only)
   const [selectedIds, setSelectedIds] = useState(new Set());
 
-  if (loading) return <p style={{ padding: "2rem" }}>Loading cart...</p>;
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   if (!cart || !cart.items || cart.items.length === 0) {
     return (
-      <div style={{ padding: "2rem" }}>
-        <h2>Your Cart</h2>
-        <p>Your cart is empty.</p>
-        <Link to="/products">Go shopping</Link>
-      </div>
+      <Container sx={{ py: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Your Cart
+        </Typography>
+
+        <Alert severity="info">
+          Your cart is empty.{" "}
+          <Link to="/products">Go shopping</Link>
+        </Alert>
+      </Container>
     );
   }
 
@@ -32,95 +59,111 @@ const CartPage = () => {
   );
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "2rem" }}>
-      <h2>Your Cart</h2>
+    <Container sx={{ py: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        Your Cart
+      </Typography>
 
-      <table style={{ width: "100%", marginTop: "1rem" }}>
-        <thead>
-          <tr>
-            <th>Select</th>
-            <th align="left">Product</th>
-            <th>Price</th>
-            <th>Qty</th>
-            <th align="right">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cart.items.map((item) => (
-            <tr key={item.productId}>
-              <td align="center">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.has(item.productId)}
-                  onChange={() => {
-                    setSelectedIds((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(item.productId)) {
-                        next.delete(item.productId);
-                      } else {
-                        next.add(item.productId);
-                      }
-                      return next;
-                    });
-                  }}
-                />
-              </td>
+      <TableContainer component={Paper} sx={{ mt: 2 }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Select</TableCell>
+              <TableCell>Product</TableCell>
+              <TableCell align="center">Price</TableCell>
+              <TableCell align="center">Qty</TableCell>
+              <TableCell align="right">Total</TableCell>
+            </TableRow>
+          </TableHead>
 
-              <td>{item.name}</td>
+          <TableBody>
+            {cart.items.map((item) => (
+              <TableRow key={item.productId}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(item.productId)}
+                    onChange={() => {
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(item.productId)) {
+                          next.delete(item.productId);
+                        } else {
+                          next.add(item.productId);
+                        }
+                        return next;
+                      });
+                    }}
+                  />
+                </TableCell>
 
-              <td align="center">${item.price.toFixed(2)}</td>
+                <TableCell>{item.name}</TableCell>
 
-              <td align="center">
-                <button
-                  onClick={() =>
-                    addToCart(
-                      {
-                        _id: item.productId,
-                        name: item.name,
-                        price: item.price,
-                      },
-                      -1
-                    )
-                  }
-                  disabled={item.quantity <= 1}
-                >
-                  -
-                </button>
+                <TableCell align="center">
+                  ${item.price.toFixed(2)}
+                </TableCell>
 
-                <span style={{ margin: "0 0.5rem" }}>
-                  {item.quantity}
-                </span>
+                <TableCell align="center">
+                  <Button
+                    size="small"
+                    onClick={() =>
+                      addToCart(
+                        {
+                          _id: item.productId,
+                          name: item.name,
+                          price: item.price,
+                        },
+                        -1
+                      )
+                    }
+                    disabled={item.quantity <= 1}
+                  >
+                    −
+                  </Button>
 
-                <button
-                  onClick={() =>
-                    addToCart(
-                      {
-                        _id: item.productId,
-                        name: item.name,
-                        price: item.price,
-                      },
-                      1
-                    )
-                  }
-                >
-                  +
-                </button>
-              </td>
+                  <Typography
+                    component="span"
+                    sx={{ mx: 1, fontWeight: "bold" }}
+                  >
+                    {item.quantity}
+                  </Typography>
 
-              <td align="right">
-                ${(item.price * item.quantity).toFixed(2)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  <Button
+                    size="small"
+                    onClick={() =>
+                      addToCart(
+                        {
+                          _id: item.productId,
+                          name: item.name,
+                          price: item.price,
+                        },
+                        1
+                      )
+                    }
+                  >
+                    +
+                  </Button>
+                </TableCell>
 
-      <h3 style={{ textAlign: "right", marginTop: "1.5rem" }}>
-        Subtotal (Selected): ${selectedSubtotal.toFixed(2)}
-      </h3>
+                <TableCell align="right">
+                  ${(item.price * item.quantity).toFixed(2)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      <div style={{ textAlign: "right", marginTop: "1rem" }}>
-        <button
+      {/* Subtotal */}
+      <Box sx={{ textAlign: "right", mt: 3 }}>
+        <Typography variant="h6">
+          Subtotal (Selected): ${selectedSubtotal.toFixed(2)}
+        </Typography>
+      </Box>
+
+      {/* Checkout */}
+      <Box sx={{ textAlign: "right", mt: 2 }}>
+        <Button
+          variant="contained"
           onClick={() => {
             if (selectedItems.length === 0) {
               alert("Please select at least one item to checkout.");
@@ -136,9 +179,9 @@ const CartPage = () => {
           }}
         >
           Proceed to Checkout
-        </button>
-      </div>
-    </div>
+        </Button>
+      </Box>
+    </Container>
   );
 };
 
@@ -147,23 +190,30 @@ export default CartPage;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // import { useCart } from "../../context/CartContext";
 // import { Link, useNavigate } from "react-router-dom";
-// import { useEffect, useState } from "react";
+// import { useState } from "react";
 
 // const CartPage = () => {
 //   const { cart, loading, addToCart } = useCart();
 //   const navigate = useNavigate();
 
-//   // Track selected items for checkout
+//   // Track selected items for checkout (manual selection only)
 //   const [selectedIds, setSelectedIds] = useState(new Set());
-
-//   // Auto-select all items when cart loads
-//   useEffect(() => {
-//     if (cart?.items) {
-//       setSelectedIds(new Set(cart.items.map(item => item.productId)));
-//     }
-//   }, [cart]);
 
 //   if (loading) return <p style={{ padding: "2rem" }}>Loading cart...</p>;
 
@@ -178,7 +228,7 @@ export default CartPage;
 //   }
 
 //   // Selected items only
-//   const selectedItems = cart.items.filter(item =>
+//   const selectedItems = cart.items.filter((item) =>
 //     selectedIds.has(item.productId)
 //   );
 
@@ -209,7 +259,7 @@ export default CartPage;
 //                   type="checkbox"
 //                   checked={selectedIds.has(item.productId)}
 //                   onChange={() => {
-//                     setSelectedIds(prev => {
+//                     setSelectedIds((prev) => {
 //                       const next = new Set(prev);
 //                       if (next.has(item.productId)) {
 //                         next.delete(item.productId);
@@ -299,10 +349,5 @@ export default CartPage;
 // };
 
 // export default CartPage;
-
-
-
-
-
 
 
